@@ -173,7 +173,7 @@ body {
     padding: 0.5rem;
     background: var(--item-bg-light);
     border-radius: 1rem;
-    min-width: 20%;
+    min-width: 10%;
 }
 
 .today-time {
