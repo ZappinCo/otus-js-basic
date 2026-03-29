@@ -1,37 +1,31 @@
-/**
- * @jest-environment jsdom
- */
-import { runApp } from "./runApp.js";
+import { runApp } from "./runApp";
+import { getCurrentWeather } from "./getCurrentWeater";
+import { showErrorMessage } from "./showErrorMessage";
 
-describe('test run app', () => {
-  let element;
+jest.mock("./getCurrentWeater");
+jest.mock("./showErrorMessage");
 
+describe('runApp', () => {
   beforeEach(() => {
-    element = document.createElement('div');
-    document.body.appendChild(element);
+    document.body.innerHTML = '<input class="city-name" value="Moscow"><div class="weather-container"></div>';
   });
 
-  afterEach(() => {
-    document.body.innerHTML = '';
+    const data = [
+    { dt_txt: "2026-03-15 09:00:00", main: { temp: 7 }, weather: [{ icon: "02d", description: "few clouds" }],wind:{speed:3} },
+    { dt_txt: "2026-03-15 12:00:00", main: { temp: 8 }, weather: [{ icon: "02d", description: "few clouds" }],wind:{speed:3} },
+    { dt_txt: "2026-03-16 09:00:00", main: { temp: 6 }, weather: [{ icon: "04n", description: "broken clouds" }],wind:{speed:3} },
+    { dt_txt: "2026-03-16 09:00:00", main: { temp: -5 }, weather: [{ icon: "04n", description: "broken clouds" }],wind:{speed:3} }
+  ];
+
+  test('data', async () => {
+    getCurrentWeather.mockResolvedValue({ list: data });
+    await runApp(document.createElement('div'));
+    expect(getCurrentWeather).toHaveBeenCalled();
   });
 
-  test('should have all form fields', () => {
-    runApp(element);
-
-    const nameInput = element.querySelector('.callback__name');
-    const emailInput = element.querySelector('.callback__email');
-    const textarea = element.querySelector('.callback__text');
-
-    expect(nameInput).toBeTruthy();
-    expect(nameInput.type).toBe('text');
-    expect(nameInput.required).toBe(true);
-
-    expect(emailInput).toBeTruthy();
-    expect(emailInput.type).toBe('email');
-    expect(emailInput.required).toBe(true);
-
-    expect(textarea).toBeTruthy();
-    expect(textarea.placeholder).toBe('Some text...');
+  test('without data', async () => {
+    getCurrentWeather.mockResolvedValue({ list: [] });
+    await runApp(document.createElement('div'));
+    expect(showErrorMessage).toHaveBeenCalled();
   });
-
 });
