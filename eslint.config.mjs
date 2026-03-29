@@ -18,7 +18,13 @@ export default defineConfig([
   {
     files: ["**/*.test.js", "**/*.spec.js"],
     plugins: { jest: pluginJest, },
-    languageOptions: { globals: pluginJest.environments.globals.globals, },
+    languageOptions: {
+      globals: {
+        ...pluginJest.environments.globals.globals,
+        ...globals.node,
+        process: "readonly",
+      },
+    },
     rules: {
       ...pluginJest.configs["flat/recommended"].rules,
       "semi": ["error", "always"]

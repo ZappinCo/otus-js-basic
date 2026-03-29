@@ -59,7 +59,7 @@ body {
     background: rgba(255, 0, 0, 0.1);
     border-radius: 10px;
     margin-bottom: 10px;
-    display: none; 
+    display: none;
 }
 
 .city-header {
@@ -67,6 +67,11 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
+}
+
+.city-container {
+    display: flex;
+    justify-content: space-between;
 }
 
 .city-name {
@@ -78,6 +83,59 @@ body {
     gap: 0.5rem;
     border: none;
     background: transparent;
+}
+
+.find-me-button {
+    width: 40px;
+    height: 40px;
+    color: var(--badge-text, white);
+    background: linear-gradient(135deg, var(--badge-bg, #2c5f7a), var(--text-secondary, #2c5f7a));
+    border: none;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 6px var(--card-shadow, rgba(0, 30, 40, 0.4));
+}
+
+.find-me-button::before {
+    content: "📍";
+    transition: transform 0.2s ease;
+}
+
+.find-me-button:hover {
+    background: linear-gradient(135deg, var(--text-secondary, #2c5f7a), var(--text-tertiary, #3f6f8c));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px var(--card-shadow, rgba(0, 30, 40, 0.4));
+}
+
+.find-me-button:hover::before {
+    transform: scale(1.1);
+}
+
+.find-me-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px var(--card-shadow, rgba(0, 30, 40, 0.4));
+}
+
+.find-me-button.loading {
+    opacity: 0.8;
+    cursor: wait;
+    pointer-events: none;
+}
+
+.find-me-button.loading::before {
+    content: "⏳";
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .country-badge {

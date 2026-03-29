@@ -1,10 +1,11 @@
+const items = [
+    { label: 'Температура', mainKey: 'main', key: 'temp', unit: '°C' },
+    { label: 'Давление', mainKey: 'main', key: 'pressure', unit: 'гПа' },
+    { label: 'Влажность', mainKey: 'main', key: 'humidity', unit: '%' },
+    { label: 'Ветер', mainKey: 'wind', key: 'speed', unit: 'м/с' }
+];
+
 export function createDetailInfo(element, data) {
-    const items = [
-        { label: 'Температура',mainKey:'main', key: 'temp', unit: '°C' },
-        { label: 'Давление',mainKey:'main', key: 'pressure', unit: 'гПа' },
-        { label: 'Влажность',mainKey:'main', key: 'humidity', unit: '%' },
-        { label: 'Ветер',mainKey:'wind', key: 'speed', unit: 'м/с' }
-    ];
 
     const detailContainer = document.createElement("div");
     detailContainer.className = "details-container";
@@ -14,7 +15,7 @@ export function createDetailInfo(element, data) {
     items.forEach(item => {
         const value = data[item.mainKey][item.key];
         const displayValue = `${value} ${item.unit}`;
-            
+
         const div = createDetail(item.label, displayValue);
         detailContainer.appendChild(div);
     });
