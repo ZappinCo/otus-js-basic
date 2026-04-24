@@ -1,44 +1,88 @@
-export class WeatherController {
-    #model;
-    #view;
-    #weatherService;
-    #locationService;
-    #storageService;
-    #debounceTimer;
+import EventBus from "../utils/eventBus";
 
-    constructor(model, view, weatherService, locationService, storageService) {
-        this.#model = model;
-        this.#view = view;
-        this.#weatherService = weatherService;
-        this.#locationService = locationService;
-        this.#storageService = storageService;
-        
-        this.#debounceTimer = null;
+export class WeatherController {
+    #weatherView;
+    #debounceTimer = null;
+
+    constructor(weatherView) {
+        this.#weatherView = weatherView;
         this.#bindEvents();
-        this.#subscribeToModel();
     }
 
-
     async initialize() {
-        const savedCity = this.#storageService.getCity();
+        EventBus.emit("StorageService::getCity", null, (savedCity) => {
+            if (savedCity) {
+                this.#updateCity(savedCity);
+            } else {
+                this.#loadWeatherByIp();
+            }
+        });
         
-        if (savedCity) {
-            this.#view.setCity(savedCity);
-            await this.#loadWeather(savedCity);
-        } else {
-            await this.#loadWeatherByIp();
-        }
+        EventBus.emit("StorageService::getHistory", (history) => {
+            if (history && history.length > 0) {
+                this.#loadHistoryWeather(history);
+            }
+        });
     }
 
     #bindEvents() {
-        this.#view.bindCityInput((event) => this.#onCityInputWithDebounce(event));
-        this.#view.bindFindMeButton(() => this.#onFindMeClick());
+        this.#weatherView.bindCityInput((event) => this.#onCityInputWithDebounce(event));
+        this.#weatherView.bindFindMeButton(() => this.#onFindMeClick());
+        
+        EventBus.on("WeatherController::cityChanged", (city) => {
+            this.#updateCity(city);
+        });
+        
+        EventBus.on("WeatherModel::modelChanged", (snapshot) => {
+            EventBus.emit("WeatherView::updateWeather", snapshot);
+            
+            if (!snapshot.loading && !snapshot.hasError && snapshot.city) {
+                EventBus.emit("WeatherView::setCity", snapshot.city);
+            }
+        });
+        
+        EventBus.on("WeatherService::dataReceived", (weatherData) => {
+            this.#handleWeatherData(weatherData);
+        });
+        
+        EventBus.on("WeatherService::error", (error) => {
+            EventBus.emit("WeatherModel::setError", error.message || 'Ошибка загрузки погоды');
+            EventBus.emit("WeatherView::setLoading", false);
+        });
+        
+        EventBus.on("WeatherService::historyDataReceived", (city, weatherData) => {
+            EventBus.emit("WeatherView::historyWeatherReceived", city, weatherData);
+        });
+        
+        EventBus.on("LocationService::cityDetected", (city) => {
+            this.#updateCity(city);
+        });
+        
+        EventBus.on("LocationService::error", (error) => {
+            console.error('Location error:', error);
+            EventBus.emit("WeatherModel::setError", 'Не удалось определить местоположение');
+            EventBus.emit("WeatherView::setLoading", false);
+        });
+        
+        EventBus.on("LocationService::userLocationReceived", (position) => {
+            EventBus.emit("WeatherService::fetchByLocation", 
+                position.coords.latitude,
+                position.coords.longitude
+            );
+        });
+        
+        EventBus.on("StorageService::historyUpdated", (history) => {
+            this.#loadHistoryWeather(history);
+        });
     }
 
-    #subscribeToModel() {
-        this.#model.addObserver(() => this.#onModelChange());
+    #updateCity(city) {
+        if (!city || city.trim() === '') return;
+                
+        EventBus.emit("StorageService::saveCity", city);
+        EventBus.emit("WeatherView::setCity", city);
+        EventBus.emit("WeatherService::fetchByCity", city);
     }
-
 
     #onCityInputWithDebounce(event) {
         if (this.#debounceTimer) {
@@ -50,107 +94,54 @@ export class WeatherController {
         }, 500);
     }
 
-    async #onCityInput(event) {
+    #onCityInput(event) {
         const city = event.target.value;
         
         if (!city || city.trim() === '') {
             return;
         }
-        
-        this.#storageService.saveCity(city);
-        await this.#loadWeather(city);
+
+        this.#updateCity(city);
     }
 
-    async #onFindMeClick() {
-        if (this.#model.isLoading()) {
-            return;
-        }
-        
-        this.#view.setLoading(true);
-        try {
-            const position = await this.#locationService.getUserLocation();
-            const weatherData = await this.#weatherService.getWeatherByLocation(
-                position.coords.latitude,
-                position.coords.longitude
-            );
+    #onFindMeClick() {
+        EventBus.emit("WeatherModel::getSnapshot", (snapshot) => {
+            if (snapshot.loading) return;
             
-            await this.#handleWeatherData(weatherData);
-        } catch (error) {
-            console.warn('Geolocation error:', error);
-            await this.#fallbackToIpLocation();
-        } finally {
-            this.#view.setLoading(false);
-        }
+            EventBus.emit("WeatherModel::setLoading", true);
+            EventBus.emit("WeatherView::setLoading", true);
+            EventBus.emit("LocationService::getUserLocation");
+        });
     }
 
-    #onModelChange() {
-        this.#view.updateWeather(this.#model);
-        
-        if (this.#model.hasError()) {
-            this.#view.showError(this.#model.getError());
-        }
+    #loadWeatherByIp() {
+        EventBus.emit("WeatherModel::setLoading", true);
+        EventBus.emit("WeatherView::setLoading", true);
+        EventBus.emit("LocationService::getCityByIp");
     }
 
-    async #loadWeather(city) {
-        if (!city || city.trim() === '') {
-            return;
-        }
-        this.#model.setLoading(true);
-        
-        try {
-            const weatherData = await this.#weatherService.getWeatherByCity(city);
-            
-            if (weatherData && weatherData.list && weatherData.list.length > 0) {
-                this.#model.setWeatherData(weatherData);
-            } else {
-                this.#model.setError(`Нет данных о погоде для города ${city}`);
-            }
-        } catch (error) {
-            console.error('Load weather error:', error);
-            this.#model.setError('Ошибка загрузки данных о погоде');
-        }
-    }
-
-    async #loadWeatherByIp() {
-        this.#model.setLoading(true);
-        
-        try {
-            const city = await this.#locationService.getCityByIp();
-            
-            if (city) {
-                this.#storageService.saveCity(city);
-                this.#view.setCity(city);
-                await this.#loadWeather(city);
-            } else {
-                this.#model.setError('Не удалось определить ваше местоположение');
-                this.#view.setLoading(false);
-            }
-        } catch (error) {
-            console.error('IP location error:', error);
-            this.#model.setError('Ошибка определения местоположения');
-            this.#view.setLoading(false);
-        }
-    }
-
-    async #fallbackToIpLocation() {
-        const city = await this.#locationService.getCityByIp();
-        
-        if (city) {
-            this.#storageService.saveCity(city);
-            this.#view.setCity(city);
-            await this.#loadWeather(city);
-        } else {
-            this.#model.setError('Не удалось определить ваше местоположение');
-        }
-    }
-
-    async #handleWeatherData(weatherData) {
+    #handleWeatherData(weatherData) {
         if (weatherData && weatherData.city) {
-            this.#storageService.saveCity(weatherData.city.name);
-            this.#view.setCity(weatherData.city.name);
-            this.#model.setWeatherData(weatherData);
+            const cityName = weatherData.city.name;
+                        
+            EventBus.emit("StorageService::saveCity", cityName);
+            EventBus.emit("StorageService::addToHistory", cityName);
+            EventBus.emit("WeatherView::setCity", cityName);
+            EventBus.emit("WeatherModel::setWeatherData", weatherData);
+        } else if (weatherData && weatherData.list && weatherData.list.length > 0) {
+            EventBus.emit("WeatherModel::setWeatherData", weatherData);
         } else {
-            this.#model.setError('Не удалось получить данные о погоде');
+            EventBus.emit("WeatherModel::setError", 'Не удалось получить данные о погоде');
         }
+        
+        EventBus.emit("WeatherView::setLoading", false);
+    }
+
+    #loadHistoryWeather(history) {
+        if (!history || history.length === 0) return;
+        
+        history.forEach(item => {
+            EventBus.emit("WeatherService::fetchHistoryWeather", item.city);
+        });
     }
 }

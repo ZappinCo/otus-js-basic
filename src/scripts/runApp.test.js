@@ -1,5 +1,11 @@
+// runApp.test.js
 import { runApp } from './runApp.js';
+import { WeatherModel } from './models/weatherModel.js';
+import { WeatherView } from './views/weatherView.js';
 import { WeatherController } from './controllers/weatherController.js';
+import { WeatherService } from './services/weatherService.js';
+import { LocationService } from './services/locationService.js';
+import { StorageService } from './services/storageService.js';
 
 jest.mock('./models/weatherModel.js');
 jest.mock('./views/weatherView.js');
@@ -9,25 +15,39 @@ jest.mock('./services/locationService.js');
 jest.mock('./services/storageService.js');
 
 describe('runApp', () => {
-    test('should initialize app correctly', async () => {
-        const element = document.createElement('div');
-        const mockInitialize = jest.fn().mockResolvedValue();
-        WeatherController.mockImplementation(() => ({ initialize: mockInitialize }));
+    let mockElement;
 
-        await runApp(element);
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockElement = document.createElement('div');
+    });
 
+    test('should create all services and components', async () => {
+        await runApp(mockElement);
+
+        expect(WeatherService).toHaveBeenCalled();
+        expect(LocationService).toHaveBeenCalled();
+        expect(StorageService).toHaveBeenCalled();
+        expect(WeatherModel).toHaveBeenCalled();
+        expect(WeatherView).toHaveBeenCalled();
         expect(WeatherController).toHaveBeenCalled();
-        expect(mockInitialize).toHaveBeenCalled();
     });
 
     test('should render view with element', async () => {
-        const element = document.createElement('div');
         const mockRender = jest.fn();
-        const { WeatherView } = await import('./views/weatherView.js');
         WeatherView.mockImplementation(() => ({ render: mockRender }));
 
-        await runApp(element);
+        await runApp(mockElement);
 
-        expect(mockRender).toHaveBeenCalledWith(element);
+        expect(mockRender).toHaveBeenCalledWith(mockElement);
+    });
+
+    test('should pass view to controller', async () => {
+        const mockView = { render: jest.fn() };
+        WeatherView.mockImplementation(() => mockView);
+
+        await runApp(mockElement);
+
+        expect(WeatherController).toHaveBeenCalledWith(mockView);
     });
 });
