@@ -6,20 +6,14 @@ import { LocationService } from './services/locationService.js';
 import { StorageService } from './services/storageService.js';
 
 export async function runApp(element) {
-    const weatherService = new WeatherService();
-    const locationService = new LocationService();
-    const storageService = new StorageService();
+    new WeatherService();
+    new LocationService();
+    new StorageService();
     
-    const model = new WeatherModel();
+    new WeatherModel();
     const view = new WeatherView();
     view.render(element);
-    const controller = new WeatherController(
-        model, 
-        view, 
-        weatherService, 
-        locationService, 
-        storageService
-    );
     
-    await controller.initialize();
+    new WeatherController(view).initialize();
+
 }

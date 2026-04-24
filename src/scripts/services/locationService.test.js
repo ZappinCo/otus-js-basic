@@ -1,58 +1,119 @@
 import { LocationService } from './locationService.js';
+import EventBus from '../utils/eventBus.js';
 
-jest.mock('./httpService.js');
+jest.mock('../utils/eventBus.js');
 
 describe('LocationService', () => {
-    let locationService;
     let mockHttpService;
+    let handler;
 
     beforeEach(() => {
+        jest.clearAllMocks();
         mockHttpService = { get: jest.fn() };
-        locationService = new LocationService(mockHttpService);
+        
+        EventBus.on.mockImplementation((event, fn) => {
+            if (event === 'LocationService::getCityByIp') handler = fn;
+        });
     });
 
     describe('getCityByIp', () => {
-        test('should return city on success', async () => {
+        test('should emit cityDetected on success', async () => {
             mockHttpService.get.mockResolvedValue({ status: 'success', city: 'Moscow' });
-            const result = await locationService.getCityByIp();
-            expect(result).toBe('Moscow');
+            new LocationService(mockHttpService);
+            
+            await handler();
+            
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::cityDetected', 'Moscow');
         });
 
-        test('should return null on fail', async () => {
+        test('should emit error when status is not success', async () => {
             mockHttpService.get.mockResolvedValue({ status: 'fail' });
-            const result = await locationService.getCityByIp();
-            expect(result).toBeNull();
+            new LocationService(mockHttpService);
+            
+            await handler();
+            
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::error', expect.any(Error));
+            expect(EventBus.emit.mock.calls[0][1].message).toBe('Не удалось определить город по IP');
         });
 
-        test('should return null on error', async () => {
-            mockHttpService.get.mockRejectedValue(new Error('Network error'));
-            const result = await locationService.getCityByIp();
-            expect(result).toBeNull();
+        test('should emit error on network error', async () => {
+            const networkError = new Error('Network error');
+            mockHttpService.get.mockRejectedValue(networkError);
+            new LocationService(mockHttpService);
+            
+            await handler();
+            
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::error', networkError);
         });
     });
 
     describe('getUserLocation', () => {
-        test('should return position on success', async () => {
+        let userLocationHandler;
+
+        beforeEach(() => {
+            EventBus.on.mockImplementation((event, fn) => {
+                if (event === 'LocationService::getUserLocation') userLocationHandler = fn;
+            });
+            new LocationService(mockHttpService);
+        });
+
+        test('should emit userLocationReceived on success', async () => {
             const mockPosition = { coords: { latitude: 55.75, longitude: 37.62 } };
             global.navigator.geolocation = {
                 getCurrentPosition: jest.fn((success) => success(mockPosition))
             };
 
-            const result = await locationService.getUserLocation();
-            expect(result).toEqual(mockPosition);
+            await userLocationHandler();
+            
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::userLocationReceived', mockPosition);
         });
 
-        test('should reject on error', async () => {
+        test('should emit error on geolocation error with code 1', async () => {
+            const error = { code: 1, message: 'User denied' };
             global.navigator.geolocation = {
-                getCurrentPosition: jest.fn((_, error) => error(new Error('Denied')))
+                getCurrentPosition: jest.fn((_, errorFn) => errorFn(error))
             };
 
-            await expect(locationService.getUserLocation()).rejects.toThrow('Denied');
+            await userLocationHandler();
+            
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::error', expect.any(Error));
+            expect(EventBus.emit.mock.calls[0][1].message).toBe('Пользователь запретил доступ к геолокации');
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::getCityByIp');
         });
 
-        test('should reject when not supported', async () => {
+        test('should emit error on geolocation error with code 2', async () => {
+            const error = { code: 2, message: 'Position unavailable' };
+            global.navigator.geolocation = {
+                getCurrentPosition: jest.fn((_, errorFn) => errorFn(error))
+            };
+
+            await userLocationHandler();
+            
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::error', expect.any(Error));
+            expect(EventBus.emit.mock.calls[0][1].message).toBe('Информация о местоположении недоступна');
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::getCityByIp');
+        });
+
+        test('should emit error on geolocation error with code 3', async () => {
+            const error = { code: 3, message: 'Timeout' };
+            global.navigator.geolocation = {
+                getCurrentPosition: jest.fn((_, errorFn) => errorFn(error))
+            };
+
+            await userLocationHandler();
+            
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::error', expect.any(Error));
+            expect(EventBus.emit.mock.calls[0][1].message).toBe('Время получения геолокации истекло');
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::getCityByIp');
+        });
+
+        test('should emit error when geolocation not supported', async () => {
             global.navigator.geolocation = undefined;
-            await expect(locationService.getUserLocation()).rejects.toThrow('Геолокация не поддерживается');
+
+            await userLocationHandler();
+            
+            expect(EventBus.emit).toHaveBeenCalledWith('LocationService::error', expect.any(Error));
+            expect(EventBus.emit.mock.calls[0][1].message).toBe('Геолокация не поддерживается вашим браузером');
         });
     });
 });
