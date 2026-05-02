@@ -1,9 +1,12 @@
 import { HistoryWeatherItem } from './historyWeatherItem.js';
-import eventBus from '../../utils/eventBus.js';
 import { translateWeatherDesc } from '../../utils/translateWeatherDesc.js';
+import router from '../../utils/router.js';
 
 jest.mock('../../utils/eventBus.js');
 jest.mock('../../utils/translateWeatherDesc.js');
+jest.mock('../../utils/router.js', () => ({
+    navigateTo: jest.fn()
+}));
 
 describe('HistoryWeatherItem', () => {
     let historyItem;
@@ -31,11 +34,11 @@ describe('HistoryWeatherItem', () => {
 
         test('should add click event listener', () => {
             const element = historyItem.render();
-            const emitSpy = jest.spyOn(eventBus, 'emit');
-            
+            const navigateSpy = jest.spyOn(router, 'navigateTo');
+                
             element.click();
-            
-            expect(emitSpy).toHaveBeenCalledWith('HistoryWeather::citySelected', 'Moscow');
+                
+            expect(navigateSpy).toHaveBeenCalledWith('/city/Moscow');
         });
     });
 

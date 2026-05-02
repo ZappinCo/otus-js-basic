@@ -1,5 +1,5 @@
 import { translateWeatherDesc } from '../../utils/translateWeatherDesc.js';
-import eventBus from "../../utils/eventBus";
+import router from '../../utils/router.js';
 
 export class HistoryWeatherItem {
     #city;
@@ -31,9 +31,8 @@ export class HistoryWeatherItem {
         
         this.#container.appendChild(this.#weatherContainer);
         
-        this.#container.addEventListener('click', (e) => {
-            e.stopPropagation();
-            eventBus.emit("HistoryWeather::citySelected", this.#city);
+        this.#container.addEventListener('click', () => {
+            router.navigateTo('/city/'+this.#city);
         });
         
         return this.#container;
