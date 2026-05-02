@@ -16,6 +16,7 @@ export class WeatherView {
     #weatherContainer;
     #cityInput;
     #findMeButton;
+    #aboutButton;
     #errorMessage;
 
     constructor() {
@@ -30,6 +31,7 @@ export class WeatherView {
         this.#weatherContainer = null;
         this.#cityInput = null;
         this.#findMeButton = null;
+        this.#aboutButton = null;
         this.#errorMessage = null;
         this.#bindEvents();
     }
@@ -75,9 +77,15 @@ export class WeatherView {
         this.#findMeButton.className = 'find-me-button';
         this.#findMeButton.title = 'Определить мое местоположение';
         this.#findMeButton.textContent = '📍';
+
+        this.#aboutButton = document.createElement('button');
+        this.#aboutButton.className = 'find-me-button';
+        this.#aboutButton.title = 'О приложении';
+        this.#aboutButton.textContent = 'ℹ️';
         
         cityHeader.appendChild(this.#cityInput);
         cityHeader.appendChild(this.#findMeButton);
+        cityHeader.appendChild(this.#aboutButton);
         this.#container.appendChild(cityHeader);
         
         this.#errorMessage = document.createElement('div');
@@ -103,7 +111,7 @@ export class WeatherView {
         this.#contentWrapper.appendChild(this.#sidebarContainer);
         this.#container.appendChild(this.#contentWrapper);
         
-        parentElement.appendChild(this.#container);
+        parentElement.replaceChildren(this.#container);
         
         eventBus.emit("StorageService::getHistory", (history) => {
             this.#historyWeather.updateHistory(history);
@@ -113,6 +121,8 @@ export class WeatherView {
                 });
             }
         });
+
+        return this.#container;
     }
 
     updateWeatherFromSnapshot(snapshot) {
@@ -213,6 +223,12 @@ export class WeatherView {
             this.#findMeButton.addEventListener('click', handler);
         }
     }
+
+    bindAboutButton(handler) {
+    if (this.#aboutButton) {
+        this.#aboutButton.addEventListener('click', handler);
+    }
+}
 
     getWeatherContainer() {
         return this.#weatherContainer;

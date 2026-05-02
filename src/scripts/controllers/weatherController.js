@@ -1,5 +1,5 @@
 import eventBus from "../utils/eventBus";
-
+import router from "../utils/router";
 export class WeatherController {
     #weatherView;
     #debounceTimer = null;
@@ -28,6 +28,7 @@ export class WeatherController {
     #bindEvents() {
         this.#weatherView.bindCityInput((event) => this.#onCityInputWithDebounce(event));
         this.#weatherView.bindFindMeButton(() => this.#onFindMeClick());
+        this.#weatherView.bindAboutButton(() => this.#onAboutPageClick());
         
         eventBus.on("WeatherController::cityChanged", (city) => {
             this.#updateCity(city);
@@ -78,10 +79,10 @@ export class WeatherController {
 
     #updateCity(city) {
         if (!city || city.trim() === '') return;
-                
         eventBus.emit("StorageService::saveCity", city);
         eventBus.emit("WeatherView::setCity", city);
         eventBus.emit("WeatherService::fetchByCity", city);
+        router.navigateTo('/city/'+city,false);
     }
 
     #onCityInputWithDebounce(event) {
@@ -102,6 +103,10 @@ export class WeatherController {
         }
 
         this.#updateCity(city);
+    }
+
+    #onAboutPageClick(){
+        router.navigateTo('/about');
     }
 
     #onFindMeClick() {
