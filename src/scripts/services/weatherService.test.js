@@ -1,69 +1,69 @@
 import { WeatherService } from './weatherService.js';
-import { HttpService } from './httpService.js';
+import EventBus from '../utils/eventBus.js';
 
 jest.mock('./httpService.js');
+jest.mock('../utils/eventBus.js');
 
 describe('WeatherService', () => {
-    let weatherService;
     let mockHttpService;
+    let getHandler;
 
     beforeEach(() => {
+        jest.clearAllMocks();
         mockHttpService = { get: jest.fn() };
-        weatherService = new WeatherService(mockHttpService);
+        new WeatherService(mockHttpService);
+        
+        getHandler = (event) => EventBus.on.mock.calls.find(call => call[0] === event)[1];
     });
 
-    describe('constructor', () => {
-        test('should use provided httpService', () => {
-            expect(weatherService.httpService).toBe(mockHttpService);
-        });
-
-        test('should create new HttpService if not provided', () => {
-            const service = new WeatherService();
-            expect(service.httpService).toBeInstanceOf(HttpService);
-        });
+    test('fetchByCity: success', async () => {
+        const mockData = { list: [{}] };
+        mockHttpService.get.mockResolvedValue(mockData);
+        
+        await getHandler('WeatherService::fetchByCity')('Moscow');
+        
+        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::dataReceived', mockData);
     });
 
-    describe('getWeatherByCity', () => {
-        test('should return weather data for valid city', async () => {
-            const mockData = { list: [], city: { name: 'Moscow' } };
-            mockHttpService.get.mockResolvedValue(mockData);
-
-            const result = await weatherService.getWeatherByCity('Moscow');
-
-            expect(result).toEqual(mockData);
-            expect(mockHttpService.get).toHaveBeenCalledWith(
-                expect.stringContaining('q=Moscow')
-            );
-        });
-
-        test('should return null on API error', async () => {
-            mockHttpService.get.mockRejectedValue(new Error('API Error'));
-
-            const result = await weatherService.getWeatherByCity('Moscow');
-
-            expect(result).toBeNull();
-        });
+    test('fetchByCity: error', async () => {
+        mockHttpService.get.mockRejectedValue(new Error('Fail'));
+        
+        await getHandler('WeatherService::fetchByCity')('Moscow');
+        
+        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::error', expect.any(Error));
     });
 
-    describe('getWeatherByLocation', () => {
-        test('should return weather data for valid coordinates', async () => {
-            const mockData = { list: [], city: { name: 'Moscow' } };
-            mockHttpService.get.mockResolvedValue(mockData);
+    test('fetchByLocation: success', async () => {
+        const mockData = { list: [{}] };
+        mockHttpService.get.mockResolvedValue(mockData);
+        
+        await getHandler('WeatherService::fetchByLocation')(55.75, 37.62);
+        
+        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::dataReceived', mockData);
+    });
 
-            const result = await weatherService.getWeatherByLocation(55.75, 37.62);
+    test('fetchByLocation: error', async () => {
+        mockHttpService.get.mockRejectedValue(new Error('Fail'));
+        
+        await getHandler('WeatherService::fetchByLocation')(55.75, 37.62);
+        
+        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::error', expect.any(Error));
+    });
 
-            expect(result).toEqual(mockData);
-            expect(mockHttpService.get).toHaveBeenCalledWith(
-                expect.stringContaining('lat=55.75&lon=37.62')
-            );
-        });
+    test('fetchHistoryWeather: success', async () => {
+        const mockData = { list: [{}] };
+        mockHttpService.get.mockResolvedValue(mockData);
+        
+        await getHandler('WeatherService::fetchHistoryWeather')('Moscow');
+        
+        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::historyDataReceived', 'Moscow', mockData);
+    });
 
-        test('should return null on API error', async () => {
-            mockHttpService.get.mockRejectedValue(new Error('API Error'));
-
-            const result = await weatherService.getWeatherByLocation(55.75, 37.62);
-
-            expect(result).toBeNull();
-        });
+    test('fetchHistoryWeather: error', async () => {
+        mockHttpService.get.mockRejectedValue(new Error('Fail'));
+        
+        await getHandler('WeatherService::fetchHistoryWeather')('Moscow');
+        
+        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::historyError', 'Moscow', expect.any(Error));
     });
 });

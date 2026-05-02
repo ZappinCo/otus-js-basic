@@ -1,195 +1,194 @@
 import { WeatherModel } from './weatherModel.js';
+import EventBus from '../utils/eventBus.js';
+
+jest.mock('../utils/eventBus.js');
 
 describe('WeatherModel', () => {
-    let model;
+    let weatherModel;
 
     beforeEach(() => {
-        model = new WeatherModel();
-    });
-
-    describe('initial state', () => {
-        test('should initialize with default values', () => {
-            expect(model.getCurrentWeather()).toBeNull();
-            expect(model.getForecastList()).toEqual([]);
-            expect(model.isLoading()).toBe(false);
-            expect(model.getError()).toBeNull();
-            expect(model.hasError()).toBe(false);
-            expect(model.hasData()).toBe(false);
-        });
-    });
-
-    describe('addObserver', () => {
-        test('should add observer', () => {
-            const observer = jest.fn();
-            model.addObserver(observer);
-            
-            model.setLoading(true);
-            
-            expect(observer).toHaveBeenCalled();
-        });
-
-        test('should throw error if observer is not a function', () => {
-            expect(() => model.addObserver(null)).toThrow('Observer must be a function');
-            expect(() => model.addObserver('not function')).toThrow('Observer must be a function');
-        });
+        jest.clearAllMocks();
+        weatherModel = new WeatherModel();
     });
 
     describe('setLoading and isLoading', () => {
-        test('should set loading state', () => {
-            expect(model.isLoading()).toBe(false);
-            
-            model.setLoading(true);
-            expect(model.isLoading()).toBe(true);
-            
-            model.setLoading(false);
-            expect(model.isLoading()).toBe(false);
+        test('should set loading to true', () => {
+            weatherModel.setLoading(true);
+            expect(weatherModel.isLoading()).toBe(true);
         });
 
-        test('should not notify observers if loading state unchanged', () => {
-            const observer = jest.fn();
-            model.addObserver(observer);
-            
-            model.setLoading(false);
-            expect(observer).not.toHaveBeenCalled();
+        test('should set loading to false', () => {
+            weatherModel.setLoading(true);
+            weatherModel.setLoading(false);
+            expect(weatherModel.isLoading()).toBe(false);
+        });
+
+        test('should not emit change if loading same value', () => {
+            weatherModel.setLoading(false);
+            expect(EventBus.emit).toHaveBeenCalledTimes(0);
+        });
+
+        test('should emit modelChanged on loading change', () => {
+            weatherModel.setLoading(true);
+            expect(EventBus.emit).toHaveBeenCalledWith('WeatherModel::modelChanged', expect.any(Object));
         });
     });
 
     describe('setError and getError', () => {
-        test('should set error and clear loading', () => {
-            model.setLoading(true);
-            model.setError('Test error');
-            
-            expect(model.getError()).toBe('Test error');
-            expect(model.hasError()).toBe(true);
-            expect(model.isLoading()).toBe(false);
+        test('should set error message', () => {
+            weatherModel.setError('Network error');
+            expect(weatherModel.getError()).toBe('Network error');
+            expect(weatherModel.hasError()).toBe(true);
+        });
+
+        test('should set loading to false when error set', () => {
+            weatherModel.setLoading(true);
+            weatherModel.setError('Error');
+            expect(weatherModel.isLoading()).toBe(false);
         });
     });
 
     describe('setWeatherData', () => {
-        const mockData = {
+        const validData = {
             list: [
-                { dt_txt: "2026-03-15 09:00:00", main: { temp: 10 } },
-                { dt_txt: "2026-03-15 15:00:00", main: { temp: 15 } },
-                { dt_txt: "2026-03-16 15:00:00", main: { temp: 12 } }
-            ]
+                { dt_txt: '2024-01-01 12:00:00', main: { temp: 20 } }
+            ],
+            city: { name: 'Moscow' }
         };
 
-        test('should set valid weather data', () => {
-            model.setWeatherData(mockData);
-            
-            expect(model.getCurrentWeather()).toEqual(mockData.list[0]);
-            expect(model.getForecastList()).toEqual(mockData.list);
-            expect(model.hasData()).toBe(true);
-            expect(model.isLoading()).toBe(false);
-            expect(model.hasError()).toBe(false);
+        test('should set weather data for valid data', () => {
+            weatherModel.setWeatherData(validData);
+            expect(weatherModel.hasData()).toBe(true);
+            expect(weatherModel.getCurrentWeather()).toEqual(validData.list[0]);
+            expect(weatherModel.getForecastList()).toEqual(validData.list);
+            expect(weatherModel.getCity()).toBe('Moscow');
         });
 
-        test('should set error for null data', () => {
-            model.setWeatherData(null);
-            
-            expect(model.getError()).toBe('Нет данных о погоде');
-            expect(model.hasData()).toBe(false);
+        test('should set error for invalid data', () => {
+            weatherModel.setWeatherData(null);
+            expect(weatherModel.hasError()).toBe(true);
+            expect(weatherModel.getError()).toBe('Нет данных о погоде');
         });
 
         test('should set error for empty list', () => {
-            model.setWeatherData({ list: [] });
-            
-            expect(model.getError()).toBe('Нет данных о погоде');
-            expect(model.hasData()).toBe(false);
+            weatherModel.setWeatherData({ list: [] });
+            expect(weatherModel.hasError()).toBe(true);
         });
 
-        test('should set error for invalid data structure', () => {
-            model.setWeatherData({});
-            
-            expect(model.getError()).toBe('Нет данных о погоде');
+        test('should set error for missing list', () => {
+            weatherModel.setWeatherData({});
+            expect(weatherModel.hasError()).toBe(true);
+        });
+
+        test('should set loading to false after data set', () => {
+            weatherModel.setLoading(true);
+            weatherModel.setWeatherData(validData);
+            expect(weatherModel.isLoading()).toBe(false);
+        });
+    });
+
+    describe('clearData', () => {
+        beforeEach(() => {
+            weatherModel.setWeatherData({
+                list: [{ dt_txt: '2024-01-01 12:00:00' }],
+                city: { name: 'Moscow' }
+            });
+        });
+
+        test('should clear all data', () => {
+            weatherModel.clearData();
+            expect(weatherModel.hasData()).toBe(false);
+            expect(weatherModel.getCurrentWeather()).toBeNull();
+            expect(weatherModel.getForecastList()).toEqual([]);
+            expect(weatherModel.getCity()).toBeNull();
+            expect(weatherModel.hasError()).toBe(false);
         });
     });
 
     describe('getTodayForecast', () => {
-        const mockData = {
-            list: [
-                { dt_txt: "2026-03-15 09:00:00", main: { temp: 10 } },
-                { dt_txt: "2026-03-15 15:00:00", main: { temp: 15 } },
-                { dt_txt: "2026-03-16 09:00:00", main: { temp: 12 } },
-                { dt_txt: "2026-03-16 15:00:00", main: { temp: 14 } }
-            ]
-        };
-
-        beforeEach(() => {
-            model.setWeatherData(mockData);
-        });
-
-        test('should return only today\'s forecast', () => {
-            const todayForecast = model.getTodayForecast();
+        const today = new Date().toISOString().split('T')[0];
+        
+        test('should return today forecast', () => {
+            const data = {
+                list: [
+                    { dt_txt: `${today} 12:00:00`, main: { temp: 20 } },
+                    { dt_txt: `${today} 15:00:00`, main: { temp: 22 } },
+                    { dt_txt: '2024-01-02 12:00:00', main: { temp: 18 } }
+                ]
+            };
+            weatherModel.setWeatherData(data);
             
+            const todayForecast = weatherModel.getTodayForecast();
             expect(todayForecast).toHaveLength(2);
-            expect(todayForecast[0].dt_txt).toContain('2026-03-15');
-            expect(todayForecast[1].dt_txt).toContain('2026-03-15');
         });
 
-        test('should return empty array when no data', () => {
-            const emptyModel = new WeatherModel();
-            expect(emptyModel.getTodayForecast()).toEqual([]);
+        test('should return empty array if no data', () => {
+            expect(weatherModel.getTodayForecast()).toEqual([]);
         });
     });
 
     describe('getNextDaysForecast', () => {
-        const mockData = {
-            list: [
-                { dt_txt: "2026-03-15 09:00:00", main: { temp: 10 } },
-                { dt_txt: "2026-03-15 15:00:00", main: { temp: 15 } },
-                { dt_txt: "2026-03-16 09:00:00", main: { temp: 12 } },
-                { dt_txt: "2026-03-16 15:00:00", main: { temp: 14 } },
-                { dt_txt: "2026-03-17 15:00:00", main: { temp: 13 } },
-                { dt_txt: "2026-03-17 21:00:00", main: { temp: 11 } }
-            ]
-        };
-
-        beforeEach(() => {
-            model.setWeatherData(mockData);
-        });
-
-        test('should return only 15:00 forecasts for next days', () => {
-            const nextDays = model.getNextDaysForecast();
+        test('should return next days forecast at 15:00', () => {
+            const data = {
+                list: [
+                    { dt_txt: '2024-01-01 15:00:00', main: { temp: 20 } },
+                    { dt_txt: '2024-01-02 15:00:00', main: { temp: 22 } },
+                    { dt_txt: '2024-01-02 18:00:00', main: { temp: 21 } },
+                    { dt_txt: '2024-01-03 15:00:00', main: { temp: 19 } }
+                ]
+            };
+            weatherModel.setWeatherData(data);
             
+            const nextDays = weatherModel.getNextDaysForecast();
             expect(nextDays).toHaveLength(2);
-            expect(nextDays[0].dt_txt).toBe('2026-03-16 15:00:00');
-            expect(nextDays[1].dt_txt).toBe('2026-03-17 15:00:00');
+            expect(nextDays[0].dt_txt).toBe('2024-01-02 15:00:00');
+            expect(nextDays[1].dt_txt).toBe('2024-01-03 15:00:00');
         });
 
-        test('should return empty array when no data', () => {
-            const emptyModel = new WeatherModel();
-            expect(emptyModel.getNextDaysForecast()).toEqual([]);
+        test('should return empty array if no data', () => {
+            expect(weatherModel.getNextDaysForecast()).toEqual([]);
         });
     });
 
-    describe('observer notifications', () => {
-        test('should notify observers on setLoading', () => {
-            const observer = jest.fn();
-            model.addObserver(observer);
+    describe('getSnapshot', () => {
+        test('should return complete snapshot', () => {
+            const data = {
+                list: [{ dt_txt: '2024-01-01 12:00:00', main: { temp: 20 } }],
+                city: { name: 'Moscow' }
+            };
+            weatherModel.setWeatherData(data);
             
-            model.setLoading(true);
-            
-            expect(observer).toHaveBeenCalledTimes(1);
-            expect(observer).toHaveBeenCalledWith(model);
+            const snapshot = weatherModel.getSnapshot();
+            expect(snapshot).toHaveProperty('currentWeather');
+            expect(snapshot).toHaveProperty('forecastList');
+            expect(snapshot).toHaveProperty('loading');
+            expect(snapshot).toHaveProperty('error');
+            expect(snapshot).toHaveProperty('city', 'Moscow');
+            expect(snapshot).toHaveProperty('hasData', true);
+            expect(snapshot).toHaveProperty('hasError', false);
+            expect(snapshot).toHaveProperty('todayForecast');
+            expect(snapshot).toHaveProperty('nextDaysForecast');
+        });
+    });
+
+    describe('EventBus bindings', () => {
+        test('should handle WeatherModel::setLoading event', () => {
+            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherModel::setLoading')[1];
+            handler(true);
+            expect(weatherModel.isLoading()).toBe(true);
         });
 
-        test('should notify observers on setError', () => {
-            const observer = jest.fn();
-            model.addObserver(observer);
-            
-            model.setError('Error');
-            
-            expect(observer).toHaveBeenCalledTimes(1);
+        test('should handle WeatherModel::setError event', () => {
+            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherModel::setError')[1];
+            handler('Error');
+            expect(weatherModel.getError()).toBe('Error');
         });
 
-        test('should notify observers on setWeatherData', () => {
-            const observer = jest.fn();
-            model.addObserver(observer);
-            
-            model.setWeatherData({ list: [{}] });
-            
-            expect(observer).toHaveBeenCalledTimes(1);
+        test('should handle WeatherModel::getSnapshot event with callback', () => {
+            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherModel::getSnapshot')[1];
+            const callback = jest.fn();
+            handler(callback);
+            expect(callback).toHaveBeenCalledWith(expect.any(Object));
         });
     });
 });
