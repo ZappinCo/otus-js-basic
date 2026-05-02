@@ -1,5 +1,5 @@
 import { HistoryWeatherItem } from './historyWeatherItem.js';
-import EventBus from '../../utils/eventBus.js';
+import eventBus from '../../utils/eventBus.js';
 import { translateWeatherDesc } from '../../utils/translateWeatherDesc.js';
 
 jest.mock('../../utils/eventBus.js');
@@ -31,7 +31,7 @@ describe('HistoryWeatherItem', () => {
 
         test('should add click event listener', () => {
             const element = historyItem.render();
-            const emitSpy = jest.spyOn(EventBus, 'emit');
+            const emitSpy = jest.spyOn(eventBus, 'emit');
             
             element.click();
             

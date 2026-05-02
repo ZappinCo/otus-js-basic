@@ -1,4 +1,4 @@
-import EventBus from "../utils/eventBus";
+import eventBus from "../utils/eventBus";
 
 export class WeatherModel {
     #currentWeather = null;
@@ -12,29 +12,29 @@ export class WeatherModel {
     }
 
     #bindEvents() {
-        EventBus.on("WeatherModel::setLoading", (loading) => {
+        eventBus.on("WeatherModel::setLoading", (loading) => {
             this.setLoading(loading);
         });
 
-        EventBus.on("WeatherModel::setError", (error) => {
+        eventBus.on("WeatherModel::setError", (error) => {
             this.setError(error);
         });
 
-        EventBus.on("WeatherModel::setWeatherData", (data) => {
+        eventBus.on("WeatherModel::setWeatherData", (data) => {
             this.setWeatherData(data);
         });
 
-        EventBus.on("WeatherModel::clearData", () => {
+        eventBus.on("WeatherModel::clearData", () => {
             this.clearData();
         });
 
-        EventBus.on("WeatherModel::getSnapshot", (callback) => {
+        eventBus.on("WeatherModel::getSnapshot", (callback) => {
             if (callback) callback(this.getSnapshot());
         });
     }
 
     #emitChange() {
-        EventBus.emit("WeatherModel::modelChanged", this.getSnapshot());
+        eventBus.emit("WeatherModel::modelChanged", this.getSnapshot());
     }
 
     setLoading(loading) {

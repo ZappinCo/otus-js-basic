@@ -1,6 +1,6 @@
 import { HistoryWeather } from './historyWeather.js';
 import { HistoryWeatherItem } from './historyWeatherItem.js';
-import EventBus from '../../utils/eventBus.js';
+import eventBus from '../../utils/eventBus.js';
 
 jest.mock('../../utils/eventBus.js');
 jest.mock('./historyWeatherItem.js');
@@ -88,19 +88,19 @@ describe('HistoryWeather', () => {
         });
     });
 
-    describe('EventBus subscription', () => {
+    describe('eventBus subscription', () => {
         test('should subscribe to HistoryWeather::citySelected event', () => {
-            expect(EventBus.on).toHaveBeenCalledWith('HistoryWeather::citySelected', expect.any(Function));
+            expect(eventBus.on).toHaveBeenCalledWith('HistoryWeather::citySelected', expect.any(Function));
         });
 
         test('should emit cityChanged when city selected', () => {
-            const handler = EventBus.on.mock.calls.find(
+            const handler = eventBus.on.mock.calls.find(
                 call => call[0] === 'HistoryWeather::citySelected'
             )[1];
             
             handler('Moscow');
             
-            expect(EventBus.emit).toHaveBeenCalledWith('WeatherController::cityChanged', 'Moscow');
+            expect(eventBus.emit).toHaveBeenCalledWith('WeatherController::cityChanged', 'Moscow');
         });
     });
 
@@ -161,11 +161,11 @@ describe('HistoryWeather', () => {
             historyWeather.render(mockParentElement);
             historyWeather.updateHistory([{ city: 'Moscow', timestamp: 123 }]);
             
-            expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::fetchHistoryWeather', 'Moscow');
+            expect(eventBus.emit).toHaveBeenCalledWith('WeatherService::fetchHistoryWeather', 'Moscow');
         });
 
         test('should cleanup event listeners after timeout', () => {
-            const offSpy = jest.spyOn(EventBus, 'off');
+            const offSpy = jest.spyOn(eventBus, 'off');
             
             historyWeather.render(mockParentElement);
             historyWeather.updateHistory([{ city: 'Moscow', timestamp: 123 }]);

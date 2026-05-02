@@ -1,5 +1,5 @@
 import { HistoryWeatherItem } from './historyWeatherItem.js';
-import EventBus from "../../utils/eventBus";
+import eventBus from "../../utils/eventBus";
 
 export class HistoryWeather {
     #container;
@@ -12,13 +12,13 @@ export class HistoryWeather {
     }
 
     #bindEvents() {
-        EventBus.on("HistoryWeather::citySelected", (city) => {
+        eventBus.on("HistoryWeather::citySelected", (city) => {
             this.#onCitySelected(city);
         });
     }
 
     #onCitySelected(city) {
-        EventBus.emit("WeatherController::cityChanged", city);
+        eventBus.emit("WeatherController::cityChanged", city);
         this.#highlightSelectedCity(city);
     }
 
@@ -86,24 +86,24 @@ export class HistoryWeather {
                 } else {
                     historyItem.hide();
                 }
-                EventBus.off("WeatherService::historyDataReceived", handler);
+                eventBus.off("WeatherService::historyDataReceived", handler);
             }
         };
         
         const errorHandler = (errorCity) => {
             if (errorCity === city) {
                 historyItem.hide();
-                EventBus.off("WeatherService::historyError", errorHandler);
+                eventBus.off("WeatherService::historyError", errorHandler);
             }
         };
         
-        EventBus.on("WeatherService::historyDataReceived", handler);
-        EventBus.on("WeatherService::historyError", errorHandler);
-        EventBus.emit("WeatherService::fetchHistoryWeather", city);
+        eventBus.on("WeatherService::historyDataReceived", handler);
+        eventBus.on("WeatherService::historyError", errorHandler);
+        eventBus.emit("WeatherService::fetchHistoryWeather", city);
         
         setTimeout(() => {
-            EventBus.off("WeatherService::historyDataReceived", handler);
-            EventBus.off("WeatherService::historyError", errorHandler);
+            eventBus.off("WeatherService::historyDataReceived", handler);
+            eventBus.off("WeatherService::historyError", errorHandler);
         }, 10000);
     }
 

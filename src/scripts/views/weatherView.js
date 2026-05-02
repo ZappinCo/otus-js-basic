@@ -1,4 +1,4 @@
-import EventBus from "../utils/eventBus";
+import eventBus from "../utils/eventBus";
 import { TodayCards } from './components/todayCards.js';
 import { ForecastList } from './components/forecastList.js';
 import { DetailInfo } from './components/detailInfo.js';
@@ -35,27 +35,27 @@ export class WeatherView {
     }
 
     #bindEvents() {
-        EventBus.on("WeatherView::setCity", (city) => {
+        eventBus.on("WeatherView::setCity", (city) => {
             this.setCity(city);
         });
 
-        EventBus.on("WeatherView::setLoading", (isLoading) => {
+        eventBus.on("WeatherView::setLoading", (isLoading) => {
             this.setLoading(isLoading);
         });
 
-        EventBus.on("WeatherView::updateWeather", (snapshot) => {
+        eventBus.on("WeatherView::updateWeather", (snapshot) => {
             this.updateWeatherFromSnapshot(snapshot);
         });
 
-        EventBus.on("WeatherView::showError", (error) => {
+        eventBus.on("WeatherView::showError", (error) => {
             this.showError(error);
         });
         
-        EventBus.on("StorageService::historyUpdated", (history) => {
+        eventBus.on("StorageService::historyUpdated", (history) => {
             this.#historyWeather.updateHistory(history);
         });
         
-        EventBus.on("WeatherView::historyWeatherReceived", (city, weatherData) => {
+        eventBus.on("WeatherView::historyWeatherReceived", (city, weatherData) => {
             this.#historyWeather.updateCityWeather(city, weatherData);
         });
     }
@@ -105,11 +105,11 @@ export class WeatherView {
         
         parentElement.appendChild(this.#container);
         
-        EventBus.emit("StorageService::getHistory", (history) => {
+        eventBus.emit("StorageService::getHistory", (history) => {
             this.#historyWeather.updateHistory(history);
             if (history && history.length > 0) {
                 history.forEach(item => {
-                    EventBus.emit("WeatherService::fetchHistoryWeather", item.city);
+                    eventBus.emit("WeatherService::fetchHistoryWeather", item.city);
                 });
             }
         });

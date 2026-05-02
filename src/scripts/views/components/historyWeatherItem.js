@@ -1,5 +1,5 @@
 import { translateWeatherDesc } from '../../utils/translateWeatherDesc.js';
-import EventBus from "../../utils/eventBus";
+import eventBus from "../../utils/eventBus";
 
 export class HistoryWeatherItem {
     #city;
@@ -33,7 +33,7 @@ export class HistoryWeatherItem {
         
         this.#container.addEventListener('click', (e) => {
             e.stopPropagation();
-            EventBus.emit("HistoryWeather::citySelected", this.#city);
+            eventBus.emit("HistoryWeather::citySelected", this.#city);
         });
         
         return this.#container;

@@ -1,4 +1,4 @@
-import EventBus from "../utils/eventBus";
+import eventBus from "../utils/eventBus";
 
 export class StorageService {
     constructor() {
@@ -9,35 +9,35 @@ export class StorageService {
     }
 
     #bindEvents() {
-        EventBus.on("StorageService::saveCity", (city) => {
+        eventBus.on("StorageService::saveCity", (city) => {
             this.saveCity(city);
         });
 
-        EventBus.on("StorageService::getCity", (data, callback) => {
+        eventBus.on("StorageService::getCity", (data, callback) => {
             const city = this.getCity();
             if (callback && typeof callback === 'function') {
                 callback(city);
             }
         });
 
-        EventBus.on("StorageService::addToHistory", (city) => {
+        eventBus.on("StorageService::addToHistory", (city) => {
             this.addToHistory(city);
         });
 
-        EventBus.on("StorageService::getHistory", (callback) => {
+        eventBus.on("StorageService::getHistory", (callback) => {
             const history = this.getHistory();
             if (callback && typeof callback === 'function') {
                 callback(history);
             } else {
-                EventBus.emit("StorageService::historyRetrieved", history);
+                eventBus.emit("StorageService::historyRetrieved", history);
             }
         });
 
-        EventBus.on("StorageService::clearHistory", () => {
+        eventBus.on("StorageService::clearHistory", () => {
             this.clearHistory();
         });
 
-        EventBus.on("StorageService::removeFromHistory", (city) => {
+        eventBus.on("StorageService::removeFromHistory", (city) => {
             this.removeFromHistory(city);
         });
     }
@@ -102,7 +102,7 @@ export class StorageService {
         
         this.#saveData();
         
-        EventBus.emit("StorageService::historyUpdated", this.data.searchHistory);
+        eventBus.emit("StorageService::historyUpdated", this.data.searchHistory);
     }
 
     getHistory() {
@@ -116,8 +116,8 @@ export class StorageService {
         this.data.searchHistory = [];
         this.#saveData();
         
-        EventBus.emit("StorageService::historyCleared");
-        EventBus.emit("StorageService::historyUpdated", []);
+        eventBus.emit("StorageService::historyCleared");
+        eventBus.emit("StorageService::historyUpdated", []);
     }
 
     removeFromHistory(city) {
@@ -130,7 +130,7 @@ export class StorageService {
         
         this.#saveData();
         
-        EventBus.emit("StorageService::historyUpdated", this.data.searchHistory);
+        eventBus.emit("StorageService::historyUpdated", this.data.searchHistory);
     }
 
     getLastSearch() {

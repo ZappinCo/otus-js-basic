@@ -1,5 +1,5 @@
 import { WeatherModel } from './weatherModel.js';
-import EventBus from '../utils/eventBus.js';
+import eventBus from '../utils/eventBus.js';
 
 jest.mock('../utils/eventBus.js');
 
@@ -25,12 +25,12 @@ describe('WeatherModel', () => {
 
         test('should not emit change if loading same value', () => {
             weatherModel.setLoading(false);
-            expect(EventBus.emit).toHaveBeenCalledTimes(0);
+            expect(eventBus.emit).toHaveBeenCalledTimes(0);
         });
 
         test('should emit modelChanged on loading change', () => {
             weatherModel.setLoading(true);
-            expect(EventBus.emit).toHaveBeenCalledWith('WeatherModel::modelChanged', expect.any(Object));
+            expect(eventBus.emit).toHaveBeenCalledWith('WeatherModel::modelChanged', expect.any(Object));
         });
     });
 
@@ -171,21 +171,21 @@ describe('WeatherModel', () => {
         });
     });
 
-    describe('EventBus bindings', () => {
+    describe('eventBus bindings', () => {
         test('should handle WeatherModel::setLoading event', () => {
-            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherModel::setLoading')[1];
+            const handler = eventBus.on.mock.calls.find(c => c[0] === 'WeatherModel::setLoading')[1];
             handler(true);
             expect(weatherModel.isLoading()).toBe(true);
         });
 
         test('should handle WeatherModel::setError event', () => {
-            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherModel::setError')[1];
+            const handler = eventBus.on.mock.calls.find(c => c[0] === 'WeatherModel::setError')[1];
             handler('Error');
             expect(weatherModel.getError()).toBe('Error');
         });
 
         test('should handle WeatherModel::getSnapshot event with callback', () => {
-            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherModel::getSnapshot')[1];
+            const handler = eventBus.on.mock.calls.find(c => c[0] === 'WeatherModel::getSnapshot')[1];
             const callback = jest.fn();
             handler(callback);
             expect(callback).toHaveBeenCalledWith(expect.any(Object));

@@ -1,4 +1,4 @@
-import EventBus from "../utils/eventBus";
+import eventBus from "../utils/eventBus";
 import { HttpService } from './httpService';
 
 const API_KEY = "7881bfb7be02c74633e5fdee4ff41329";
@@ -12,25 +12,25 @@ export class WeatherService {
     }
 
     #bindEvents() {
-        EventBus.on("WeatherService::fetchByCity", async (city) => {
+        eventBus.on("WeatherService::fetchByCity", async (city) => {
             const result = await this.#fetchWeatherData(city);
             if (result.success) {
-                EventBus.emit("WeatherService::dataReceived", result.data);
+                eventBus.emit("WeatherService::dataReceived", result.data);
             } else {
-                EventBus.emit("WeatherService::error", result.error);
+                eventBus.emit("WeatherService::error", result.error);
             }
         });
 
-        EventBus.on("WeatherService::fetchByLocation", async (lat, lon) => {
+        eventBus.on("WeatherService::fetchByLocation", async (lat, lon) => {
             await this.#fetchWeatherByLocation(lat, lon);
         });
 
-        EventBus.on("WeatherService::fetchHistoryWeather", async (city) => {
+        eventBus.on("WeatherService::fetchHistoryWeather", async (city) => {
             const result = await this.#fetchWeatherData(city);
             if (result.success) {
-                EventBus.emit("WeatherService::historyDataReceived", city, result.data);
+                eventBus.emit("WeatherService::historyDataReceived", city, result.data);
             } else {
-                EventBus.emit("WeatherService::historyError", city, result.error);
+                eventBus.emit("WeatherService::historyError", city, result.error);
             }
         });
     }
@@ -57,13 +57,13 @@ export class WeatherService {
             const weatherData = await this.httpService.get(url);
             
             if (weatherData && weatherData.list && weatherData.list.length > 0) {
-                EventBus.emit("WeatherService::dataReceived", weatherData);
+                eventBus.emit("WeatherService::dataReceived", weatherData);
             } else {
-                EventBus.emit("WeatherService::error", new Error('Нет данных о погоде по координатам'));
+                eventBus.emit("WeatherService::error", new Error('Нет данных о погоде по координатам'));
             }
         } catch (error) {
             console.error('Weather fetch error:', error);
-            EventBus.emit("WeatherService::error", error);
+            eventBus.emit("WeatherService::error", error);
         }
     }
 }

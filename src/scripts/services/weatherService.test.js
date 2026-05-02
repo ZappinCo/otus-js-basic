@@ -1,5 +1,5 @@
 import { WeatherService } from './weatherService.js';
-import EventBus from '../utils/eventBus.js';
+import eventBus from '../utils/eventBus.js';
 
 jest.mock('./httpService.js');
 jest.mock('../utils/eventBus.js');
@@ -13,7 +13,7 @@ describe('WeatherService', () => {
         mockHttpService = { get: jest.fn() };
         new WeatherService(mockHttpService);
         
-        getHandler = (event) => EventBus.on.mock.calls.find(call => call[0] === event)[1];
+        getHandler = (event) => eventBus.on.mock.calls.find(call => call[0] === event)[1];
     });
 
     test('fetchByCity: success', async () => {
@@ -22,7 +22,7 @@ describe('WeatherService', () => {
         
         await getHandler('WeatherService::fetchByCity')('Moscow');
         
-        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::dataReceived', mockData);
+        expect(eventBus.emit).toHaveBeenCalledWith('WeatherService::dataReceived', mockData);
     });
 
     test('fetchByCity: error', async () => {
@@ -30,7 +30,7 @@ describe('WeatherService', () => {
         
         await getHandler('WeatherService::fetchByCity')('Moscow');
         
-        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::error', expect.any(Error));
+        expect(eventBus.emit).toHaveBeenCalledWith('WeatherService::error', expect.any(Error));
     });
 
     test('fetchByLocation: success', async () => {
@@ -39,7 +39,7 @@ describe('WeatherService', () => {
         
         await getHandler('WeatherService::fetchByLocation')(55.75, 37.62);
         
-        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::dataReceived', mockData);
+        expect(eventBus.emit).toHaveBeenCalledWith('WeatherService::dataReceived', mockData);
     });
 
     test('fetchByLocation: error', async () => {
@@ -47,7 +47,7 @@ describe('WeatherService', () => {
         
         await getHandler('WeatherService::fetchByLocation')(55.75, 37.62);
         
-        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::error', expect.any(Error));
+        expect(eventBus.emit).toHaveBeenCalledWith('WeatherService::error', expect.any(Error));
     });
 
     test('fetchHistoryWeather: success', async () => {
@@ -56,7 +56,7 @@ describe('WeatherService', () => {
         
         await getHandler('WeatherService::fetchHistoryWeather')('Moscow');
         
-        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::historyDataReceived', 'Moscow', mockData);
+        expect(eventBus.emit).toHaveBeenCalledWith('WeatherService::historyDataReceived', 'Moscow', mockData);
     });
 
     test('fetchHistoryWeather: error', async () => {
@@ -64,6 +64,6 @@ describe('WeatherService', () => {
         
         await getHandler('WeatherService::fetchHistoryWeather')('Moscow');
         
-        expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::historyError', 'Moscow', expect.any(Error));
+        expect(eventBus.emit).toHaveBeenCalledWith('WeatherService::historyError', 'Moscow', expect.any(Error));
     });
 });

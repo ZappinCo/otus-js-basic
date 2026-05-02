@@ -1,5 +1,5 @@
 import { StorageService } from './storageService.js';
-import EventBus from '../utils/eventBus.js';
+import eventBus from '../utils/eventBus.js';
 
 jest.mock('../utils/eventBus.js');
 
@@ -70,7 +70,7 @@ describe('StorageService', () => {
 
         test('should emit historyUpdated event', () => {
             storageService.addToHistory('Moscow');
-            expect(EventBus.emit).toHaveBeenCalledWith('StorageService::historyUpdated', expect.any(Array));
+            expect(eventBus.emit).toHaveBeenCalledWith('StorageService::historyUpdated', expect.any(Array));
         });
 
         test('should initialize searchHistory array if not exists', () => {
@@ -113,7 +113,7 @@ describe('StorageService', () => {
 
         test('should emit historyUpdated event', () => {
             storageService.removeFromHistory('London');
-            expect(EventBus.emit).toHaveBeenCalledWith('StorageService::historyUpdated', expect.any(Array));
+            expect(eventBus.emit).toHaveBeenCalledWith('StorageService::historyUpdated', expect.any(Array));
         });
 
         test('should do nothing for non-existent city', () => {
@@ -146,8 +146,8 @@ describe('StorageService', () => {
 
         test('should emit historyCleared and historyUpdated events', () => {
             storageService.clearHistory();
-            expect(EventBus.emit).toHaveBeenCalledWith('StorageService::historyCleared');
-            expect(EventBus.emit).toHaveBeenCalledWith('StorageService::historyUpdated', []);
+            expect(eventBus.emit).toHaveBeenCalledWith('StorageService::historyCleared');
+            expect(eventBus.emit).toHaveBeenCalledWith('StorageService::historyUpdated', []);
         });
     });
 
@@ -164,16 +164,16 @@ describe('StorageService', () => {
         });
     });
 
-    describe('EventBus bindings', () => {
+    describe('eventBus bindings', () => {
         test('should handle StorageService::saveCity event', () => {
-            const handler = EventBus.on.mock.calls.find(call => call[0] === 'StorageService::saveCity')[1];
+            const handler = eventBus.on.mock.calls.find(call => call[0] === 'StorageService::saveCity')[1];
             handler('Moscow');
             expect(storageService.getCity()).toBe('Moscow');
         });
 
         test('should handle StorageService::getCity event with callback', () => {
             storageService.saveCity('Moscow');
-            const handler = EventBus.on.mock.calls.find(call => call[0] === 'StorageService::getCity')[1];
+            const handler = eventBus.on.mock.calls.find(call => call[0] === 'StorageService::getCity')[1];
             const callback = jest.fn();
             handler(null, callback);
             expect(callback).toHaveBeenCalledWith('Moscow');
@@ -181,7 +181,7 @@ describe('StorageService', () => {
 
         test('should handle StorageService::getHistory event with callback', () => {
             storageService.addToHistory('Moscow');
-            const handler = EventBus.on.mock.calls.find(call => call[0] === 'StorageService::getHistory')[1];
+            const handler = eventBus.on.mock.calls.find(call => call[0] === 'StorageService::getHistory')[1];
             const callback = jest.fn();
             handler(callback);
             expect(callback).toHaveBeenCalledWith(expect.any(Array));
@@ -189,14 +189,14 @@ describe('StorageService', () => {
 
         test('should handle StorageService::getHistory event without callback', () => {
             storageService.addToHistory('Moscow');
-            const handler = EventBus.on.mock.calls.find(call => call[0] === 'StorageService::getHistory')[1];
+            const handler = eventBus.on.mock.calls.find(call => call[0] === 'StorageService::getHistory')[1];
             handler(null);
-            expect(EventBus.emit).toHaveBeenCalledWith('StorageService::historyRetrieved', expect.any(Array));
+            expect(eventBus.emit).toHaveBeenCalledWith('StorageService::historyRetrieved', expect.any(Array));
         });
 
         test('should handle StorageService::clearHistory event', () => {
             storageService.addToHistory('Moscow');
-            const handler = EventBus.on.mock.calls.find(call => call[0] === 'StorageService::clearHistory')[1];
+            const handler = eventBus.on.mock.calls.find(call => call[0] === 'StorageService::clearHistory')[1];
             handler();
             expect(storageService.getHistory()).toHaveLength(0);
         });
@@ -204,7 +204,7 @@ describe('StorageService', () => {
         test('should handle StorageService::removeFromHistory event', () => {
             storageService.addToHistory('Moscow');
             storageService.addToHistory('London');
-            const handler = EventBus.on.mock.calls.find(call => call[0] === 'StorageService::removeFromHistory')[1];
+            const handler = eventBus.on.mock.calls.find(call => call[0] === 'StorageService::removeFromHistory')[1];
             handler('Moscow');
             expect(storageService.getHistory()).toHaveLength(1);
             expect(storageService.getHistory()[0].city).toBe('London');

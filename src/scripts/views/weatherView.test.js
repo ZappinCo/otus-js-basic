@@ -1,5 +1,5 @@
 import { WeatherView } from './weatherView.js';
-import EventBus from '../utils/eventBus.js';
+import eventBus from '../utils/eventBus.js';
 import { TodayCards } from './components/todayCards.js';
 import { ForecastList } from './components/forecastList.js';
 import { DetailInfo } from './components/detailInfo.js';
@@ -49,21 +49,21 @@ describe('WeatherView', () => {
 
         test('should request history on render', () => {
             weatherView.render(mockParentElement);
-            expect(EventBus.emit).toHaveBeenCalledWith('StorageService::getHistory', expect.any(Function));
+            expect(eventBus.emit).toHaveBeenCalledWith('StorageService::getHistory', expect.any(Function));
         });
 
         test('should handle history callback with data', () => {
             const mockHistory = [{ city: 'Moscow' }, { city: 'London' }];
             weatherView.render(mockParentElement);
             
-            const callback = EventBus.emit.mock.calls.find(
+            const callback = eventBus.emit.mock.calls.find(
                 call => call[0] === 'StorageService::getHistory'
             )[1];
             callback(mockHistory);
             
             expect(HistoryWeather.prototype.updateHistory).toHaveBeenCalledWith(mockHistory);
-            expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::fetchHistoryWeather', 'Moscow');
-            expect(EventBus.emit).toHaveBeenCalledWith('WeatherService::fetchHistoryWeather', 'London');
+            expect(eventBus.emit).toHaveBeenCalledWith('WeatherService::fetchHistoryWeather', 'Moscow');
+            expect(eventBus.emit).toHaveBeenCalledWith('WeatherService::fetchHistoryWeather', 'London');
         });
     });
 
@@ -237,13 +237,13 @@ describe('WeatherView', () => {
         });
     });
 
-    describe('EventBus subscriptions', () => {
+    describe('eventBus subscriptions', () => {
         beforeEach(() => {
             weatherView.render(mockParentElement);
         });
 
         test('should subscribe to WeatherView::setCity event', () => {
-            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherView::setCity')[1];
+            const handler = eventBus.on.mock.calls.find(c => c[0] === 'WeatherView::setCity')[1];
             handler('Moscow');
             
             const cityInput = mockParentElement.querySelector('.city-input');
@@ -251,7 +251,7 @@ describe('WeatherView', () => {
         });
 
         test('should subscribe to WeatherView::setLoading event', () => {
-            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherView::setLoading')[1];
+            const handler = eventBus.on.mock.calls.find(c => c[0] === 'WeatherView::setLoading')[1];
             handler(true);
             
             const button = mockParentElement.querySelector('.find-me-button');
@@ -259,7 +259,7 @@ describe('WeatherView', () => {
         });
 
         test('should subscribe to WeatherView::showError event', () => {
-            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherView::showError')[1];
+            const handler = eventBus.on.mock.calls.find(c => c[0] === 'WeatherView::showError')[1];
             handler('Error');
             
             const errorDiv = mockParentElement.querySelector('.error-message');
@@ -267,14 +267,14 @@ describe('WeatherView', () => {
         });
 
         test('should subscribe to StorageService::historyUpdated event', () => {
-            const handler = EventBus.on.mock.calls.find(c => c[0] === 'StorageService::historyUpdated')[1];
+            const handler = eventBus.on.mock.calls.find(c => c[0] === 'StorageService::historyUpdated')[1];
             handler([{ city: 'Moscow' }]);
             
             expect(HistoryWeather.prototype.updateHistory).toHaveBeenCalled();
         });
 
         test('should subscribe to WeatherView::historyWeatherReceived event', () => {
-            const handler = EventBus.on.mock.calls.find(c => c[0] === 'WeatherView::historyWeatherReceived')[1];
+            const handler = eventBus.on.mock.calls.find(c => c[0] === 'WeatherView::historyWeatherReceived')[1];
             handler('Moscow', { list: [{}] });
             
             expect(HistoryWeather.prototype.updateCityWeather).toHaveBeenCalledWith('Moscow', { list: [{}] });
