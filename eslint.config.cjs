@@ -1,11 +1,10 @@
-// eslint.config.js
-import js from "@eslint/js";
-import tsParser from "@typescript-eslint/parser";
-import tsPlugin from "@typescript-eslint/eslint-plugin";
-import globals from "globals";
+// eslint.config.cjs
+const js = require("@eslint/js");
+const tsParser = require("@typescript-eslint/parser");
+const tsPlugin = require("@typescript-eslint/eslint-plugin");
+const globals = require("globals");
 
-export default [
-    // Глобальные игноры
+module.exports = [
     {
         ignores: [
             "dist/**",
@@ -17,7 +16,6 @@ export default [
         ],
     },
     js.configs.recommended,
-    // JavaScript файлы
     {
         files: ["src/**/*.js", "src/**/*.mjs", "src/**/*.cjs"],
         languageOptions: {
@@ -30,7 +28,6 @@ export default [
             "semi": ["error", "always"],
         },
     },
-    // TypeScript файлы
     {
         files: ["src/**/*.ts", "src/**/*.tsx"],
         languageOptions: {
