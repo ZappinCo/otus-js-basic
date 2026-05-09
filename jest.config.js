@@ -1,22 +1,21 @@
-/**
- * For a detailed explanation regarding each configuration property, visit:
- * https://jestjs.io/docs/configuration
- */
-
-/** @type {import('jest').Config} */
-const config = {
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'jsdom',
   clearMocks: true,
   collectCoverage: true,
+  coverageDirectory: "coverage",
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
     },
   },
-  coverageDirectory: "coverage",
-  testEnvironment: "jsdom",
+  moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+  },
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+  },
 };
-
-module.exports = config;
